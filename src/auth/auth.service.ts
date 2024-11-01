@@ -1,71 +1,47 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcrypt';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { AuthRequest } from './dto/auth-request.dto';
+import { LogInRequest } from './dto/login-request.dto';
+import { UsersService } from 'src/users/users.service';
+import { Token, TokenDocument } from 'src/models/token.model';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { UserDocument } from 'src/models/user.model';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private userService: UsersService,
-    private jwtService: JwtService,
-  ) {}
-
-  async register(createUserDto: any) {
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const user = await this.userService.create({
-      ...createUserDto,
-      password: hashedPassword,
-    });
-    return user;
-  }
-
-  async validateUser(email: string, password: string, appId: string): Promise<any> {
-    const user = await this.userService.findByEmail(email);
-    
-    if (user && await bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user;
-      return result;
+    constructor(
+        private readonly usersService: UsersService,
+        @InjectModel(Token.name) private tokenModel: Model<TokenDocument>
+    ) {}
+    async handleAuth(request: AuthRequest) {
+        const user = await this.usersService.validateToken(request.token, request.operation);
+        const {_id, name, email, role} = user as UserDocument
+        const token = await this.tokenModel.create({ token: crypto.randomUUID(), user: (user as UserDocument)._id }); 
+        return {user: {_id, name, email, role}, token: token.token};
     }
-    return null;
-  }
-
-  async login(user: any) {
-    const payload = {
-      userId: user._id,
-      email: user.email,
-      role: user.role,
-      appId: user.appId,
-    };
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.sign(payload),
-      this.jwtService.sign(payload, { expiresIn: '7d' }),
-    ]);
-
-    await this.userService.updateRefreshToken(user._id, refreshToken);
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
-  }
-
-  async refreshTokens(userId: string, refreshToken: string) {
-    const user = await this.userService.findById(userId);
-    if (!user) {
-      throw new UnauthorizedException();
+    async verifyToken(query: AuthRequest) {
+        const user = await this.usersService.validateToken(query.token, query.operation);
+        const {_id, name, email, role} = user as UserDocument
+        const token = await this.tokenModel.create({ token: crypto.randomUUID(), user: (user as UserDocument)._id }); 
+        return {user: {_id, name, email, role}, token: token.token};
     }
-
-
-    const payload = {
-      userId,
-      email: user.email,
-      role: user.role,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
-
-    return {
-      access_token: accessToken,
-    };
-  }}
+    async deleteToken(token: string) {
+        await this.tokenModel.deleteOne({token});
+    }
+    async handleLogin(LogInRequest: LogInRequest) {
+        //check if user exists by email and password
+        const user = await this.usersService.findByEmail(LogInRequest.email);
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        //check if password is correct
+        const isPasswordCorrect = await this.usersService.comparePassword(LogInRequest.password, user.password);
+        if (!isPasswordCorrect) {
+            throw new BadRequestException('Invalid password');
+        }
+        //generate token
+        const token = await this.tokenModel.create({ token: crypto.randomUUID(), user: (user as UserDocument)._id }); 
+        const {_id, name, email, role} = user as UserDocument
+        return {user: {_id, name, email, role}, token: token.token};
+    }
+}

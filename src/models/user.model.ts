@@ -3,6 +3,7 @@ import mongoose, { Document } from 'mongoose';
 import { Cart } from './cart.model';
 import { Product } from './product.model';
 import { Order } from './order.model';
+import { Token } from './token.model';
 
 export type UserDocument = User & Document;
 
@@ -18,6 +19,9 @@ export class User {
     @Prop({ required: true })
     password: string;
 
+    @Prop({ nullable: true })
+    registerationToken: string;
+
     @Prop({ required: true, enum: ['admin', 'vendor', 'customer'], default: 'customer' })
     role: string;
 
@@ -29,6 +33,9 @@ export class User {
 
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }] })
     orders: Order[];
+
+    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Token' }] })
+    tokens: Token[];
 
 }
 

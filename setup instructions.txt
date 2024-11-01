@@ -1,0 +1,37 @@
+nest neww server-app
+remove app.controller.ts, 
+       app.service.ts 
+       and testing files of 'app' 
+       from server-app/src to simplify the project setup structure.
+==================================================================================
+dependencies for runtime:
+npm i @nestjs/typeorm typeorm nodemailer @nestjs/config dotenv class-validator class-transformer cookie-parser @nestjs/serve-static
+dependencies for development:
+npm i -D sqlite3 @types/nodemailer cross-env @types/cookie-parser @types/multer lorem-ipsum
+
+About these packages:
+--------------------
+typeorm & @nestjs/typorm - TypeORM library and corresponding nest module
+sqlite3 - Using sqlite for development db
+nodemailer & @types/nodemailer - To send emails we need this library
+@nestjs/config - Config module of nest
+@nestjs/serve-static - Static file serve module for nest
+dotenv - for extracting environment variables to .env files
+class-validator & class-transformer - for having validation functionality within the class definition through decorators
+cookie-parser & @types/cookie-parser - we will be using cookie for authentication token. This middleware will be handling cookie parsing
+cross-env - cross platform script to set environment variables
+@types/multer - Multer is for file upload and this is for type definitions for that package
+lorem-ipsum - we will have a seed function to generate article content and title. This library will be used for generating random words, sentences
+===================================================================================
+nest g --help
+nest g module <module-name>
+nest g controller <controller-name> --no-spec
+nest g service <service-name>
+nest g gateway <gateway-name>
+nest g pipe <pipe-name>
+nest g filter <filter-name>
+nest g interceptor <interceptor-name>
+nest g resolver <resolver-name>
+nest g guard <guard-name>
+nest g decorator <decorator-name>
+====================================================================================
