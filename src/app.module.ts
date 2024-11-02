@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { VendorsModule } from './vendors/vendors.module';
@@ -10,7 +10,10 @@ import { WishlistsModule } from './wishlists/wishlists.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailModule } from './email/email.module';
 import { AuthModule } from './auth/auth.module';
-
+import { TokenModule } from './token/token.module';
+import { FileModule } from './file/file.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +27,12 @@ import { AuthModule } from './auth/auth.module';
       }),
       inject: [ConfigService],
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/api/assets',
+    }),
+    
+    AuthModule,
     UsersModule,
     VendorsModule,
     ProductsModule,
@@ -32,7 +41,8 @@ import { AuthModule } from './auth/auth.module';
     ReviewsModule,
     WishlistsModule,
     EmailModule,
-    AuthModule,
+    TokenModule,
+    FileModule,
   ],
   controllers: [],
   providers: [],
